@@ -114,4 +114,11 @@ try {
         "success" => false,
         "message" => "Erro ao buscar agentes: " . $error->getMessage()
     ]);
+} catch (PDOException $e) {
+    http_response_code(500);
+    echo json_encode([
+        "success" => false,
+        "message" => "Erro de conexão com o banco: " . $e->getMessage()
+    ]);
+    exit;
 }

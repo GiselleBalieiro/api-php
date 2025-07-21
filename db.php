@@ -1,4 +1,6 @@
 <?php
+
+
 // Carrega variáveis de ambiente, se estiver em ambiente local com .env
 if (file_exists(__DIR__ . '/vendor/autoload.php')) {
     require __DIR__ . '/vendor/autoload.php';
@@ -13,6 +15,9 @@ $host = $_ENV["DATABASE_HOST"] ?? getenv('DATABASE_HOST');
 $dbname = $_ENV["DATABASE"] ?? getenv('DATABASE');
 $username = $_ENV["DATABASE_USERNAME"] ?? getenv('DATABASE_USERNAME');
 $password = $_ENV["DATABASE_PASSWORD"] ?? getenv('DATABASE_PASSWORD');
+
+var_dump($host, $dbname, $username, $password);
+exit;
 
 try {
     $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
