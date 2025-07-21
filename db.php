@@ -16,8 +16,8 @@ $dbname = $_ENV["DATABASE"] ?? getenv('DATABASE');
 $username = $_ENV["DATABASE_USERNAME"] ?? getenv('DATABASE_USERNAME');
 $password = $_ENV["DATABASE_PASSWORD"] ?? getenv('DATABASE_PASSWORD');
 
-var_dump($host, $dbname, $username, $password);
-exit;
+// var_dump($host, $dbname, $username, $password);
+// exit;
 
 try {
     $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
