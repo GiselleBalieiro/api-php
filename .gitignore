@@ -1,0 +1,53 @@
+# Diretórios comuns
+/vendor/
+/node_modules/
+/bower_components/
+
+# Arquivos de log
+*.log
+
+# Cache e sessões
+/cache/
+/tmp/
+/sessions/
+
+# Arquivos do Composer
+composer.lock
+
+# Arquivos de ambiente
+.env
+.env.*.local
+
+# Configurações de IDEs
+.vscode/
+.idea/
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Relatórios de erros
+error_log
+
+# Uploads (se for algo que não precisa versionar)
+uploads/
+storage/
+
+# PHPUnit
+phpunit.xml
+phpunit.result.cache
+
+# Outras pastas sensíveis
+/database.sqlite
+*.sqlite
+*.bak
+*.sql
+*.tar.gz
+*.zip
+
+# Se estiver usando Laravel (opcional)
+bootstrap/cache/
+storage/*
+!storage/app/
+!storage/framework/
+!storage/logs/
