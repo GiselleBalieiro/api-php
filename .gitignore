@@ -11,8 +11,6 @@
 /tmp/
 /sessions/
 
-# Arquivos do Composer
-composer.lock
 
 # Arquivos de ambiente
 .env
