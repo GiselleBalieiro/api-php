@@ -21,8 +21,7 @@ try {
         PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false, 
         PDO::MYSQL_ATTR_SSL_CA => null 
     ]);
-    
-    echo "Conexão realizada com sucesso!";
+
 } catch (PDOException $e) {
     die("Erro de conexão: " . $e->getMessage());
 }
