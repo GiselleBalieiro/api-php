@@ -13,7 +13,7 @@ if (isset($_SERVER['HTTP_ORIGIN']) && in_array($_SERVER['HTTP_ORIGIN'], $allowed
 }
 
 header("Access-Control-Allow-Headers: Content-Type");
-require_once "db.php
+require_once "db.php";
 
 
 // UPDATE (POST com update=1)
