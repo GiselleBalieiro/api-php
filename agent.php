@@ -13,8 +13,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['update'])) {
 
     if ($id && !empty($data['agent'])) {
         try {
-            $stmt = $pdo->prepare("UPDATE agent SET agent = :agent, personality = :personality, training = :training, status = :status WHERE id = :id");
+            $stmt = $pdo->prepare("UPDATE agent SET agent = :agent, number = :number, personality = :personality, training = :training, status = :status WHERE id = :id");
             $stmt->bindParam(':agent', $data['agent']);
+            $stmt->bindParam(':number', $data['number']);
             $stmt->bindParam(':personality', $data['personality']);
             $stmt->bindParam(':training', $data['training']);
             $stmt->bindParam(':status', $data['status']);
@@ -48,8 +49,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!empty($data['agent'])) {
         try {
-            $stmt = $pdo->prepare("INSERT INTO agent (agent, personality, training, status) VALUES (:agent, :personality, :training, :status)");
+            $stmt = $pdo->prepare("INSERT INTO agent (agent, number, personality, training, status) VALUES (:agent, :personality, :training, :status)");
             $stmt->bindParam(':agent', $data['agent']);
+            $stmt->bindParam(':number', $data['number']);
             $stmt->bindParam(':personality', $data['personality']);
             $stmt->bindParam(':training', $data['training']);
             $stmt->bindParam(':status', $data['status']);
