@@ -1,9 +1,19 @@
 <?php
 
 header("Content-Type: application/json");
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Headers: *");
-require_once "db.php";
+
+$allowed_origins = [
+    'https://agent-5mygpia1j-gisellebalieiros-projects.vercel.app',
+    'https://agent-gules-alpha.vercel.app',
+    'http://localhost:5173'
+];
+
+if (isset($_SERVER['HTTP_ORIGIN']) && in_array($_SERVER['HTTP_ORIGIN'], $allowed_origins)) {
+    header("Access-Control-Allow-Origin: " . $_SERVER['HTTP_ORIGIN']);
+}
+
+header("Access-Control-Allow-Headers: Content-Type");
+require_once "db.php
 
 
 // UPDATE (POST com update=1)
