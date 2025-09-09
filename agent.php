@@ -21,15 +21,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['update'])) {
     $data = json_decode(file_get_contents("php://input"), true);
     $id = $_GET['id'] ?? null;
 
-    if ($id && !empty($data['agent'])) {
+    if ($id && !empty($data)) {
         try {
-            $stmt = $pdo->prepare("UPDATE agent SET agent = :agent, number = :number, personality = :personality, training = :training, status = :status WHERE id = :id");
-            $stmt->bindParam(':agent', $data['agent']);
-            $stmt->bindParam(':number', $data['number']);
-            $stmt->bindParam(':personality', $data['personality']);
-            $stmt->bindParam(':training', $data['training']);
-            $stmt->bindParam(':status', $data['status']);
-            $stmt->bindParam(':id', $id);
+            $fields = [];
+            $params = [":id" => $id];
+
+            foreach ($data as $key => $value) {
+                $fields[] = "$key = :$key";
+                $params[":$key"] = $value;
+            }
+
+            if (empty($fields)) {
+                throw new Exception("Nenhum campo válido enviado para atualização");
+            }
+
+            $sql = "UPDATE agent SET " . implode(", ", $fields) . " WHERE id = :id";
+            $stmt = $pdo->prepare($sql);
+
+            foreach ($params as $param => $value) {
+                $stmt->bindValue($param, $value);
+            }
+
             $stmt->execute();
 
             echo json_encode([
@@ -57,14 +69,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['update'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = json_decode(file_get_contents("php://input"), true);
 
-    if (!empty($data['agent'])) {
+    if (!empty($data)) {
         try {
-            $stmt = $pdo->prepare("INSERT INTO agent (agent, number, personality, training, status) VALUES (:agent, :personality, :training, :status)");
-            $stmt->bindParam(':agent', $data['agent']);
-            $stmt->bindParam(':number', $data['number']);
-            $stmt->bindParam(':personality', $data['personality']);
-            $stmt->bindParam(':training', $data['training']);
-            $stmt->bindParam(':status', $data['status']);
+            $columns = [];
+            $placeholders = [];
+            $params = [];
+
+            foreach ($data as $key => $value) {
+                $columns[] = $key;
+                $placeholders[] = ":$key";
+                $params[":$key"] = $value;
+            }
+
+            $sql = "INSERT INTO agent (" . implode(", ", $columns) . ") VALUES (" . implode(", ", $placeholders) . ")";
+            $stmt = $pdo->prepare($sql);
+
+            foreach ($params as $param => $value) {
+                $stmt->bindValue($param, $value);
+            }
+
             $stmt->execute();
 
             echo json_encode([
@@ -82,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         http_response_code(400);
         echo json_encode([
             "success" => false,
-            "message" => "Nome do agente não enviado"
+            "message" => "Nenhum dado enviado para inserção"
         ]);
     }
     exit;
