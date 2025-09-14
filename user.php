@@ -15,6 +15,19 @@ if (isset($_SERVER['HTTP_ORIGIN']) && in_array($_SERVER['HTTP_ORIGIN'], $allowed
 header("Access-Control-Allow-Headers: Content-Type");
 require_once "db.php";
 
+$email = $_GET['email'];
+$password = $_GET['password'];
+
+$stmt = $pdo->prepare("SELECT * FROM users WHERE email = :email");
+$stmt->execute(['email' => $email]);
+$user = $stmt->fetch();
+
+if ($user && password_verify($password, $user['password'])) {
+    echo json_encode(['success' => true, 'user' => $user]);
+} else {
+    echo json_encode(['success' => false, 'message' => 'Conta não existe ou senha incorreta.']);
+}
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = json_decode(file_get_contents("php://input"), true);
@@ -38,6 +51,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $stmt->execute();
 
+            $session_token = bin2hex(random_bytes(32));
+
+            setcookie(
+                "session_token",
+                $session_token,
+                [
+                    "expires" => time() + 60 * 60 * 24 * 7, 
+                    "path" => "/",
+                    "secure" => true, 
+                    "httponly" => true,
+                    "samesite" => "Strict"
+                ]
+            );
+
+
             echo json_encode([
                 "success" => true,
                 "message" => "Usuário inserido com sucesso"
@@ -54,6 +82,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode([
             "success" => false,
             "message" => "Dados obrigatórios não enviados"
+        ]);
+    }
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    try {
+        $stmt = $pdo->query("SELECT * FROM user");
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        echo json_encode([
+            "success" => true,
+            "data" => $users
+        ]);
+    } catch (Exception $error) {
+        http_response_code(500);
+        echo json_encode([
+            "success" => false,
+            "message" => "Erro ao buscar usuários: " . $error->getMessage()
         ]);
     }
     exit;
