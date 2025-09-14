@@ -1,9 +1,5 @@
 <?php
 
-session_start();
-
-header("Content-Type: application/json");
-
 $allowed_origins = [
     'https://agent-5mygpia1j-gisellebalieiros-projects.vercel.app',
     'https://agent-gules-alpha.vercel.app',
@@ -22,6 +18,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
+
+header("Content-Type: application/json");
+
+session_start();
 require_once "db.php";
 
 $user_id = $_SESSION['user_id'] ?? null;

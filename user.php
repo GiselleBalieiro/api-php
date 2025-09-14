@@ -1,9 +1,5 @@
 <?php
 
-session_start();
-
-header("Content-Type: application/json");
-
 $allowed_origins = [
     'https://agent-5mygpia1j-gisellebalieiros-projects.vercel.app',
     'https://agent-gules-alpha.vercel.app',
@@ -16,12 +12,16 @@ if (isset($_SERVER['HTTP_ORIGIN']) && in_array($_SERVER['HTTP_ORIGIN'], $allowed
 }
 
 header("Access-Control-Allow-Headers: Content-Type");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
+
+header("Content-Type: application/json");
+
+session_start();
 
 require_once "db.php";
 
