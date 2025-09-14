@@ -1,5 +1,7 @@
 <?php
 
+session_start();
+
 header("Content-Type: application/json");
 
 $allowed_origins = [
@@ -15,6 +17,7 @@ if (isset($_SERVER['HTTP_ORIGIN']) && in_array($_SERVER['HTTP_ORIGIN'], $allowed
 header("Access-Control-Allow-Headers: Content-Type");
 require_once "db.php";
 
+$user_id = $_SESSION['user_id'] ?? null;
 
 // UPDATE (POST com update=1)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['update'])) {
@@ -111,12 +114,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// GET por ID
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
+// GET por id
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id']) && $user_id) {
     $id = $_GET['id'];
     try {
-        $stmt = $pdo->prepare("SELECT * FROM agent WHERE id = :id");
+        $stmt = $pdo->prepare("SELECT * FROM agent WHERE id = :id AND user_id = :user_id");
         $stmt->bindParam(':id', $id);
+        $stmt->bindParam(':user_id', $user_id);
         $stmt->execute();
         $agent = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -134,26 +138,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
     exit;
 }
 
-// GET todos
-try {
-    $stmt = $pdo->query("SELECT * FROM agent");
-    $agents = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// GET todos 
+if ($user_id) {
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM agent WHERE user_id = :user_id");
+        $stmt->bindParam(':user_id', $user_id);
+        $stmt->execute();
+        $agents = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    echo json_encode([
-        "success" => true,
-        "data" => $agents
-    ]);
-} catch (Exception $error) {
-    http_response_code(500);
+        echo json_encode([
+            "success" => true,
+            "data" => $agents
+        ]);
+    } catch (Exception $error) {
+        http_response_code(500);
+        echo json_encode([
+            "success" => false,
+            "message" => "Erro ao buscar agentes: " . $error->getMessage()
+        ]);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode([
+            "success" => false,
+            "message" => "Erro de conexão com o banco: " . $e->getMessage()
+        ]);
+    }
+    exit;
+} else {
+    http_response_code(401);
     echo json_encode([
         "success" => false,
-        "message" => "Erro ao buscar agentes: " . $error->getMessage()
-    ]);
-} catch (PDOException $e) {
-    http_response_code(500);
-    echo json_encode([
-        "success" => false,
-        "message" => "Erro de conexão com o banco: " . $e->getMessage()
+        "message" => "Usuário não autenticado"
     ]);
     exit;
 }
