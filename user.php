@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST)) {
 
     $stmt = $pdo->prepare("SELECT * FROM user WHERE email = :email");
     $stmt->execute(['email' => $email]);
-    $user = $stmt->fetch();
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($user && password_verify($password, $user['password'])) {
         echo json_encode(['success' => true, 'user' => $user]);
