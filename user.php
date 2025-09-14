@@ -21,6 +21,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 header("Content-Type: application/json");
 
+session_set_cookie_params([
+    'samesite' => 'Lax',
+    'secure' => false,
+]);
+
 session_start();
 
 require_once "db.php";
@@ -86,21 +91,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $stmt->execute();
-
-            $session_token = bin2hex(random_bytes(32));
-
-            setcookie(
-                "session_token",
-                $session_token,
-                [
-                    "expires" => time() + 60 * 60 * 24 * 7, 
-                    "path" => "/",
-                    "secure" => true, 
-                    "httponly" => true,
-                    "samesite" => "Strict"
-                ]
-            );
-
 
             echo json_encode([
                 "success" => true,
