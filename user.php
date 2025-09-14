@@ -1,4 +1,7 @@
 <?php
+
+session_start();
+
 header("Content-Type: application/json");
 
 $allowed_origins = [
@@ -22,7 +25,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once "db.php";
 
+//logout
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['logout'])) {
+    $_SESSION = [];
+    if (ini_get("session.use_cookies")) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000,
+            $params["path"], $params["domain"],
+            $params["secure"], $params["httponly"]
+        );
+    }
+    session_destroy();
 
+    setcookie("session_token", "", time() - 3600, "/");
+
+    echo json_encode([
+        "success" => true,
+        "message" => "Logout realizado com sucesso"
+    ]);
+    exit;
+}
+
+//login
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST)) {
     $data = json_decode(file_get_contents("php://input"), true);
     $email = $data['email'] ?? '';
@@ -33,6 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST)) {
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($user && password_verify($password, $user['password'])) {
+        $_SESSION['user_id'] = $user['id'];
         echo json_encode(['success' => true, 'user' => $user]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Conta não existe ou senha incorreta.']);
