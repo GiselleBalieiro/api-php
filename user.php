@@ -23,7 +23,7 @@ header("Content-Type: application/json");
 
 session_set_cookie_params([
     'samesite' => 'Lax',
-    'secure' => false,
+    'secure' => true,
 ]);
 
 session_start();
@@ -61,9 +61,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST)) {
     $stmt->execute(['email' => $email]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($user && password_verify($password, $user['password'])) {
-        $_SESSION['user_id'] = $user['id'];
-        echo json_encode(['success' => true, 'user' => $user]);
+   if ($user && password_verify($password, $user['password'])) {
+    $_SESSION['user_id'] = $user['id'];
+        echo json_encode([
+            'success' => true,
+            'message' => 'Login realizado com sucesso',
+            'user' => [
+                'id' => $user['id'],
+                'name' => $user['name'],
+                'email' => $user['email']
+            ]
+        ]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Conta não existe ou senha incorreta.']);
     }

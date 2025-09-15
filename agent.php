@@ -23,7 +23,7 @@ header("Content-Type: application/json");
 
 session_set_cookie_params([
     'samesite' => 'Lax',
-    'secure' => false,
+    'secure' => true,
 ]);
 
 session_start();
