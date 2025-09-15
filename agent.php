@@ -22,10 +22,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 header("Content-Type: application/json");
 
 session_set_cookie_params([
-    'samesite' => 'Lax',
-    'secure' => true,
+    'lifetime' => 0, 
+    'path' => '/',
+    'domain' => 'api-php-ff2c9710eabd.herokuapp.com',
+    'secure' => true, 
+    'httponly' => true,
+    'samesite' => 'None'
 ]);
-
 session_start();
 require_once "db.php";
 
