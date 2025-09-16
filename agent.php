@@ -34,6 +34,15 @@ require_once "db.php";
 
 $user_id = $_SESSION['user_id'] ?? null;
 
+if (!$user_id) {
+    http_response_code(401);
+    echo json_encode([
+        "success" => false,
+        "message" => "Usuário não autenticado"
+    ]);
+    exit;
+}
+
 // UPDATE (POST com update=1)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['update'])) {
     $data = json_decode(file_get_contents("php://input"), true);
@@ -42,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['update'])) {
     if ($id && !empty($data)) {
         try {
             $fields = [];
-            $params = [":id" => $id];
+            $params = [":id" => $id, ":user_id" => $user_id];
 
             foreach ($data as $key => $value) {
                 $fields[] = "$key = :$key";
@@ -53,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['update'])) {
                 throw new Exception("Nenhum campo válido enviado para atualização");
             }
 
-            $sql = "UPDATE agent SET " . implode(", ", $fields) . " WHERE id = :id";
+            $sql = "UPDATE agent SET " . implode(", ", $fields) . " WHERE id = :id AND user_id = :user_id";
             $stmt = $pdo->prepare($sql);
 
             foreach ($params as $param => $value) {
@@ -89,9 +98,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!empty($data)) {
         try {
-            $columns = [];
-            $placeholders = [];
-            $params = [];
+            $columns = ['user_id'];
+            $placeholders = [':user_id'];
+            $params = [':user_id' => $user_id];
 
             foreach ($data as $key => $value) {
                 $columns[] = $key;
@@ -130,19 +139,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // GET por id
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id']) && $user_id) {
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
     $id = $_GET['id'];
     try {
         $stmt = $pdo->prepare("SELECT * FROM agent WHERE id = :id AND user_id = :user_id");
-        $stmt->bindParam(':id', $id);
-        $stmt->bindParam(':user_id', $user_id);
-        $stmt->execute();
-        $agent = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt->execute([':id' => $id, ':user_id' => $user_id]);
+        $agent = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        echo json_encode([
-            "success" => true,
-            "data" => $agent
-        ]);
+        if ($agent) {
+            echo json_encode([
+                "success" => true,
+                "data" => $agent
+            ]);
+        } else {
+            echo json_encode([
+                "success" => false,
+                "message" => "Agente não encontrado"
+            ]);
+        }
     } catch (Exception $error) {
         http_response_code(500);
         echo json_encode([
@@ -154,11 +168,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id']) && $user_id) {
 }
 
 // GET todos 
-if ($user_id) {
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     try {
         $stmt = $pdo->prepare("SELECT * FROM agent WHERE user_id = :user_id");
-        $stmt->bindParam(':user_id', $user_id);
-        $stmt->execute();
+        $stmt->execute([':user_id' => $user_id]);
         $agents = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         echo json_encode([
@@ -171,19 +184,6 @@ if ($user_id) {
             "success" => false,
             "message" => "Erro ao buscar agentes: " . $error->getMessage()
         ]);
-    } catch (PDOException $e) {
-        http_response_code(500);
-        echo json_encode([
-            "success" => false,
-            "message" => "Erro de conexão com o banco: " . $e->getMessage()
-        ]);
     }
-    exit;
-} else {
-    http_response_code(401);
-    echo json_encode([
-        "success" => false,
-        "message" => "Usuário não autenticado"
-    ]);
     exit;
 }
