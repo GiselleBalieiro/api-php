@@ -24,7 +24,7 @@ header("Content-Type: application/json");
 session_set_cookie_params([
     'lifetime' => 0, 
     'path' => '/',
-    'domain' => 'api-php-ff2c9710eabd.herokuapp.com',
+    'domain' => '',
     'secure' => true, 
     'httponly' => true,
     'samesite' => 'None'

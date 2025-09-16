@@ -22,17 +22,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 header("Content-Type: application/json");
 
 session_set_cookie_params([
-    'lifetime' => 0, 
+    'lifetime' => 0,
     'path' => '/',
-    'domain' => 'api-php-ff2c9710eabd.herokuapp.com', 
-    'secure' => true, 
+    'domain' => '', 
+    'secure' => true,
     'httponly' => true,
     'samesite' => 'None'
 ]);
+
 session_start();
 require_once "db.php";
 
-//logout
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['logout'])) {
     $_SESSION = [];
     if (ini_get("session.use_cookies")) {
@@ -44,8 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['logout'])) {
     }
     session_destroy();
 
-    setcookie("session_token", "", time() - 3600, "/");
-
     echo json_encode([
         "success" => true,
         "message" => "Logout realizado com sucesso"
@@ -53,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['logout'])) {
     exit;
 }
 
-//login
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST)) {
     $data = json_decode(file_get_contents("php://input"), true);
     $email = $data['email'] ?? '';
@@ -63,8 +62,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST)) {
     $stmt->execute(['email' => $email]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-   if ($user && password_verify($password, $user['password'])) {
-    $_SESSION['user_id'] = $user['id'];
+    if ($user && password_verify($password, $user['password'])) {
+        $_SESSION['user_id'] = $user['id'];
+
         echo json_encode([
             'success' => true,
             'message' => 'Login realizado com sucesso',
@@ -80,27 +80,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST)) {
     exit;
 }
 
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = json_decode(file_get_contents("php://input"), true);
 
     if (!empty($data) && isset($data['name'], $data['email'], $data['password'])) {
         try {
-            $columns = ['name', 'email', 'password'];
-            $placeholders = [':name', ':email', ':password'];
-            $params = [
+            $stmt = $pdo->prepare("INSERT INTO user (name, email, password) VALUES (:name, :email, :password)");
+            $stmt->execute([
                 ':name' => $data['name'],
                 ':email' => $data['email'],
                 ':password' => password_hash($data['password'], PASSWORD_DEFAULT)
-            ];
-
-            $sql = "INSERT INTO user (" . implode(", ", $columns) . ") VALUES (" . implode(", ", $placeholders) . ")";
-            $stmt = $pdo->prepare($sql);
-
-            foreach ($params as $param => $value) {
-                $stmt->bindValue($param, $value);
-            }
-
-            $stmt->execute();
+            ]);
 
             echo json_encode([
                 "success" => true,
@@ -123,21 +114,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    try {
-        $stmt = $pdo->query("SELECT * FROM user");
-        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    if (!isset($_SESSION['user_id'])) {
         echo json_encode([
-            "success" => true,
-            "data" => $users
+            "success" => false,
+            "message" => "Usuário não autenticado"
         ]);
+        exit;
+    }
+
+    try {
+        $stmt = $pdo->prepare("SELECT id, name, email FROM user WHERE id = :id");
+        $stmt->execute(['id' => $_SESSION['user_id']]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user) {
+            echo json_encode([
+                "success" => true,
+                "user" => $user
+            ]);
+        } else {
+            echo json_encode([
+                "success" => false,
+                "message" => "Usuário não encontrado"
+            ]);
+        }
     } catch (Exception $error) {
         http_response_code(500);
         echo json_encode([
             "success" => false,
-            "message" => "Erro ao buscar usuários: " . $error->getMessage()
+            "message" => "Erro ao buscar usuário: " . $error->getMessage()
         ]);
     }
     exit;
 }
+
