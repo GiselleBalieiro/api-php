@@ -1,4 +1,13 @@
 <?php
+require_once "db.php";
+require 'vendor/autoload.php';
+
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+
+$secretKey = getenv('JWT_SECRET_KEY');
+
+header("Content-Type: application/json");
 
 $allowed_origins = [
     'https://agent-5mygpia1j-gisellebalieiros-projects.vercel.app',
@@ -8,10 +17,9 @@ $allowed_origins = [
 
 if (isset($_SERVER['HTTP_ORIGIN']) && in_array($_SERVER['HTTP_ORIGIN'], $allowed_origins)) {
     header("Access-Control-Allow-Origin: " . $_SERVER['HTTP_ORIGIN']);
-    header("Access-Control-Allow-Credentials: true"); 
 }
-
-header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Credentials: true");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -19,41 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-header("Content-Type: application/json");
 
-session_set_cookie_params([
-    'lifetime' => 0,
-    'path' => '/',
-    'domain' => '', 
-    'secure' => true,
-    'httponly' => true,
-    'samesite' => 'None'
-]);
-
-session_start();
-require_once "db.php";
-
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['logout'])) {
-    $_SESSION = [];
-    if (ini_get("session.use_cookies")) {
-        $params = session_get_cookie_params();
-        setcookie(session_name(), '', time() - 42000,
-            $params["path"], $params["domain"],
-            $params["secure"], $params["httponly"]
-        );
-    }
-    session_destroy();
-
-    echo json_encode([
-        "success" => true,
-        "message" => "Logout realizado com sucesso"
-    ]);
-    exit;
-}
-
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST)) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && !isset($_GET['register'])) {
     $data = json_decode(file_get_contents("php://input"), true);
     $email = $data['email'] ?? '';
     $password = $data['password'] ?? '';
@@ -63,11 +38,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST)) {
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($user && password_verify($password, $user['password'])) {
-        $_SESSION['user_id'] = $user['id'];
+        $payload = [
+            "user_id" => $user['id'],
+            "exp" => time() + 3600
+        ];
+        $jwt = JWT::encode($payload, $secretKey, 'HS256');
 
         echo json_encode([
             'success' => true,
             'message' => 'Login realizado com sucesso',
+            'token' => $jwt,
             'user' => [
                 'id' => $user['id'],
                 'name' => $user['name'],
@@ -81,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST)) {
 }
 
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['register'])) {
     $data = json_decode(file_get_contents("php://input"), true);
 
     if (!empty($data) && isset($data['name'], $data['email'], $data['password'])) {
@@ -116,17 +96,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    if (!isset($_SESSION['user_id'])) {
-        echo json_encode([
-            "success" => false,
-            "message" => "Usuário não autenticado"
-        ]);
+    $headers = getallheaders();
+    if (!isset($headers['Authorization'])) {
+        echo json_encode(["success" => false, "message" => "Token ausente"]);
         exit;
     }
 
+    $authHeader = trim(str_replace("Bearer", "", $headers['Authorization']));
+
     try {
+        $decoded = JWT::decode($authHeader, new Key($secretKey, 'HS256'));
+        $user_id = $decoded->user_id;
+
         $stmt = $pdo->prepare("SELECT id, name, email FROM user WHERE id = :id");
-        $stmt->execute(['id' => $_SESSION['user_id']]);
+        $stmt->execute(['id' => $user_id]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user) {
@@ -140,13 +123,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 "message" => "Usuário não encontrado"
             ]);
         }
-    } catch (Exception $error) {
-        http_response_code(500);
+    } catch (Exception $e) {
+        http_response_code(401);
         echo json_encode([
             "success" => false,
-            "message" => "Erro ao buscar usuário: " . $error->getMessage()
+            "message" => "Token inválido: " . $e->getMessage()
         ]);
     }
     exit;
 }
-
