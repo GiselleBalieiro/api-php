@@ -47,9 +47,12 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
 $response = curl_exec($ch);
 if ($response === false) {
     $respostaIA = "Erro ao chamar a IA: " . curl_error($ch);
+    error_log($respostaIA);
 } else {
+    error_log("Resposta da IA: " . $response);
     $decoded = json_decode($response, true);
     $respostaIA = $decoded["resposta"] ?? "Não entendi a resposta da IA.";
+    error_log("Resposta enviada: " . $respostaIA);
 }
 curl_close($ch);
 
