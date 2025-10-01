@@ -17,7 +17,7 @@ if (!$agentId) {
     exit("agent_id não informado");
 }
 
-$stmt = $pdo->prepare("SELECT token_bot, id FROM agent WHERE id = $agentId");
+$stmt = $pdo->prepare("SELECT token_bot, id FROM agent WHERE id = ?");
 $stmt->execute([$agentId]);
 $agent = $stmt->fetch(PDO::FETCH_ASSOC);
 
