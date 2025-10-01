@@ -1,5 +1,4 @@
 <?php
-
 require_once "db.php";
 
 $update = json_decode(file_get_contents("php://input"), true);
@@ -12,27 +11,25 @@ if (!$update || !isset($update["message"])) {
 $chatId = $update["message"]["chat"]["id"];
 $text   = $update["message"]["text"];
 
-$iaId = isset($_GET['ia_id']) ? $_GET['ia_id'] : null;
-$botToken = $update['bot_token'] ?? null;
-
-$apiUrl = "https://ia-rag-api.vercel.app/perguntar"; 
-
-function getJwtTokenFromHeader() {
-    $headers = getallheaders();
-    if (!isset($headers['Authorization'])) {
-        http_response_code(401);
-        exit("Token não enviado");
-    }
-    $authHeader = $headers['Authorization'];
-    list($type, $token) = explode(" ", $authHeader);
-    if (strcasecmp($type, "Bearer") != 0) {
-        http_response_code(401);
-        exit("Formato de token inválido");
-    }
-    return $token;
+$agentId = $_GET['agent_id'] ?? null;
+if (!$agentId) {
+    http_response_code(400);
+    exit("agent_id não informado");
 }
 
-$jwtToken = getJwtTokenFromHeader();
+$stmt = $pdo->prepare("SELECT token_bot, id FROM agent WHERE id = $agentId");
+$stmt->execute([$agentId]);
+$agent = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$agent) {
+    http_response_code(404);
+    exit("Agente não encontrado");
+}
+
+$botToken = $agent['token_bot'];
+$iaId     = $agent['id'];
+
+$apiUrl = "https://ia-rag-api.vercel.app/perguntar"; 
 
 $postData = [
     "pergunta" => $text,
@@ -45,7 +42,6 @@ curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
     "Content-Type: application/json"
-    // "Authorization: Bearer " . $jwtToken
 ]);
 
 $response = curl_exec($ch);
@@ -72,4 +68,4 @@ $options = [
     ]
 ];
 
-file_get_contents($url, false, stream_context_create($options));  
+file_get_contents($url, false, stream_context_create($options));
