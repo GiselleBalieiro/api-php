@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/../../db.php';
+require_once __DIR__ . '/db.php';
 
 $verify_token = $_ENV['VERIFY_TOKEN'];
 $whatsapp_token = $_ENV['WHATSAPP_TOKEN'];

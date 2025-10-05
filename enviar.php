@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/../../db.php';
+require_once __DIR__ . '/db.php';
 
 $token = $_ENV['WHATSAPP_TOKEN'];
 $phoneNumberId = $_ENV['PHONE_NUMBER_ID'];
